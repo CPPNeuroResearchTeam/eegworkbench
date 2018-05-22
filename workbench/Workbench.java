@@ -6,7 +6,7 @@
 *   the Free Software Foundation, either version 3 of the License, or
 *   (at your option) any later version.
 *
-*   EEG Workbench is distributed in the hope that it will be practical,
+*   EEG Workbench is distributed in the hope that it will be useful,
 *   but WITHOUT ANY WARRANTY; without even the implied warranty of
 *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 *   GNU General Public License for more details.
@@ -107,6 +107,7 @@ public class Workbench {
 		ArrayList<String> features;
 
 		// organize training set and test/src vector into neuroph DataSet to utilize MaxMinNormalizer
+		// MinMaxNormalizer normalizes Vector[i] = (Vector[i] - min[i]) / (max[i] - min[i])
 		DataSet nn_training_set;
 		double[] test_vector;
 		
@@ -133,7 +134,7 @@ public class Workbench {
 			for ( int idx = 0; idx < class_true.size(); idx += 1 ) {	
 				ArrayList<Double> t = new ArrayList<Double>();
 
-				for ( String fb : feature_bands ) {	
+				for ( String fb : feature_bands ) {
 					for  ( String f : features ) {
 						//System.out.println(String.format("%s:%s", fb, f));
 						t.add( Double.valueOf( 
@@ -172,6 +173,7 @@ public class Workbench {
 			this.training_means = new double[true_v.get(0).size()];
 
 			// calculate column (feature) means
+			// method: sum(x) / n
 			for ( int idx = 0; idx < true_v.size(); idx += 1 ) {
 				for ( int jdx = 0; jdx < true_v.get(idx).size(); jdx += 1 ) {
 					if ( idx == 0 ) {
@@ -189,7 +191,7 @@ public class Workbench {
 			for ( int idx = 0; idx < false_v.size(); idx += 1 ) {
 				for ( int jdx = 0; jdx < false_v.get(idx).size(); jdx += 1 ) {
 					this.training_means[jdx] += 
-						(double) false_v.get(idx).get(jdx);
+						false_v.get(idx).get(jdx);
 				}
 			}
 
@@ -201,6 +203,7 @@ public class Workbench {
 			}
 
 			// calculate column (feature) std deviations
+			// method: sum((x - mean)^2) / n
 			this.training_stddevs = new double[true_v.get(0).size()];
 
 			for ( int idx = 0; idx < true_v.size(); idx += 1 ) {
@@ -208,13 +211,13 @@ public class Workbench {
 					if ( idx == 0 ) {
 						this.training_stddevs[jdx] = 
 							Math.pow( 
-							(double) true_v.get(idx).get(jdx) -
+							true_v.get(idx).get(jdx) -
 							training_means[jdx], 2.0);
 					}
 					else {
 						this.training_stddevs[jdx] += 
 							Math.pow( 
-							(double) true_v.get(idx).get(jdx) - 
+							true_v.get(idx).get(jdx) -
 							training_means[jdx], 2.0);
 
 					}
@@ -238,9 +241,11 @@ public class Workbench {
 			}
 
 			// Construct training set (#features, 1 output)
+			// Top row of nn_training_set are Z scores
 			nn_training_set = new DataSet(true_v.get(0).size(), 1);
 
 			// neuroph wants double[] data types
+			// This is converting each value to a Z score: nn_training_set[idx][jdx] = (x - mean) / std
 			for ( int idx = 0; idx < true_v.size(); idx += 1 ) {
 				double[] t = new double[true_v.get(idx).size()];
 				for ( int jdx = 0; jdx < true_v.get(idx).size(); jdx += 1 ) {
@@ -261,6 +266,7 @@ public class Workbench {
 						training_stddevs[jdx];	
 				}
 
+				// TODO: find out what the desired output refers to
 				nn_training_set.addRow( new DataSetRow (t, new double[] {0.0}) );
 
 			}
@@ -273,7 +279,7 @@ public class Workbench {
 			for ( String fb : feature_bands ) {	
 				for  ( String f : features ) {
 					//System.out.println(String.format("%d %s:%s", idx, fb, f));
-					test_vector[idx] = ((double) (Double.valueOf( 
+					test_vector[idx] = ((Double.valueOf(
 						(String) 
 						( (JSONObject) ( (JSONObject) test_v.get(fb)).get("hjorth")).get(f) )) - training_means[idx]) / training_stddevs[idx];
 					idx += 1;
@@ -283,14 +289,15 @@ public class Workbench {
 
 		}
 
+		// TODO: review Neuroph docs to verify correct usage
+		// TODO: ensure NeuralNetwork is an MLP
 		public double classifyMLP() {
 			//System.out.println( String.format("classifyMLP(): %d, %d", true_v.size(), true_v.get(0).size()) );
 
 			// create perceptron neural network (x inputs/features, 1 output/category/label/prediction)
 			NeuralNetwork nn_perceptron = new Perceptron(true_v.get(0).size(),1);
 
-			nn_perceptron.learn(nn_training_set);	
-
+			nn_perceptron.learn(nn_training_set);
 			
 			nn_perceptron.setInput(test_vector);
 			nn_perceptron.calculate();
@@ -303,7 +310,7 @@ public class Workbench {
 			}
 			
 
-			return (double) out1[0];
+			return out1[0];
 
 		}
 
@@ -505,7 +512,7 @@ public class Workbench {
 				//a.size(), start, end ));
 			// first sort (ascending ), then get the middle (median) element
 			JSONArray sorted			= new JSONArray();
-			HashMap<Integer,Boolean> skip_idx	= new HashMap<Integer,Boolean>(); 
+			HashMap<Integer,Boolean> skip_idx	= new HashMap<>();
 
 			if (end < 0 ) {
 				end = a.size();
@@ -516,7 +523,7 @@ public class Workbench {
 			}
 
 			// loop through find min, then populate sorted
-			int min		= Math.abs((int) a.get(start));
+			int min		= Math.abs((int) a.get(start)); // min is the closest value to x axis
 			int min_idx	= start;
 			skip_idx.put(start,true);
 			for (int j = start; j < a.size() && j < end; j += 1) {
@@ -592,6 +599,7 @@ public class Workbench {
 			this.mean = this.mean / y.size();
 
 			// calculate mean sample value (aka root mean square)
+			// msv = sqrt(sum(y[i]^2 / n))
 			this.msv = 0.0;
 
 			for (int i = 0; i < y.size(); i += 1) {
@@ -600,7 +608,9 @@ public class Workbench {
 
 			this.msv = Math.sqrt(this.msv / y.size());
 
-			// activity = var(y) = variance 
+			// activity = var(y) = variance
+			// var(y) = sum((x - mean)^2) / n
+			// TODO: this  is calculated as a parameter.  Since this is a sample, shouldn't you use n - 1?
 			this.activity = 0;
 			for ( int idx = 0; idx < y.size(); idx += 1 ) {
 				this.activity += Math.pow( (double)((int) y.get(idx)) - this.mean, 2);
@@ -614,9 +624,10 @@ public class Workbench {
 			
 			
 			// calculate first difference/derivative of y (
+			//TODO: verify that this is a correct method of finding derivative
 			ArrayList<Double> y1 = new ArrayList<Double>();
 			for ( int idx = 1, idx1 = 0; idx < y.size(); idx += 1, idx1 += 1 ) {
-				y1.add(new Double( (int) y.get(idx) - (int) y.get(idx1) )); 
+				y1.add(Double.valueOf( (int) y.get(idx) - (int) y.get(idx1) ));
 			}
 
 			//mean of first difference/derivative
@@ -628,6 +639,7 @@ public class Workbench {
 			y1_mean = y1_mean / y1.size();
 
 			//activity of first difference/derivative
+			//TODO: variance should be calculated with n instead of n - 1
 			double y1_activity = 0;
 			for ( int idx = 0; idx < y1.size(); idx += 1 ) {
 				y1_activity += Math.pow( (y1.get(idx) - y1_mean), 2);
@@ -641,14 +653,13 @@ public class Workbench {
 			// calculate second difference/derivative of y (first diff/deriv of y')
 			ArrayList<Double> y2 = new ArrayList<Double>();
 			for ( int idx = 1, idx1 = 0; idx < y1.size(); idx += 1, idx1 += 1 ) {
-				y2.add( new Double( y1.get(idx) - y1.get(idx1) ) ); 
+				y2.add( Double.valueOf( y1.get(idx) - y1.get(idx1) ) );
 			}
 
 			//mean of second difference/derivative
 			double y2_mean = 0;
 			for ( int idx = 0; idx < y2.size(); idx += 1 ) {
 				y2_mean += y2.get(idx);
-
 			}
 			y2_mean = y2_mean / y2.size();
 
@@ -664,17 +675,25 @@ public class Workbench {
 			this.complexity = y1_mobility / this.mobility;
 
 			//skewness
+			//Fisher skewness is the expected value of the cubed Z scores
+			//skewness = sum((x - mean)^3) / ( n * std^3 )
 			this.skewness = 0;
+			// sum(Z^3)
 			for ( int idx = 0; idx < y.size(); idx += 1 ) {
-				this.skewness += Math.pow( ( (int) y.get(idx) ) - this.mean, 3);
+				this.skewness += Math.pow(( Double.valueOf((int) y.get(idx) ) - this.mean) / std_deviation, 3);
 			}
-			this.skewness = this.skewness / y.size();
+			// divide by n
+			this.skewness = this.skewness / (y.size());
 
 			//kurtosis
+			//Pearson's skewness is the expected value of the z scores raised to the 4th power
+			//kurtosis = sum(Z^4) / n
 			this.kurtosis= 0;
+			//sum(Z^4)
 			for ( int idx = 0; idx < y.size(); idx += 1 ) {
-				this.kurtosis+= Math.pow( ( (int) y.get(idx) ) - this.mean, 4);
+				this.kurtosis+= Math.pow( ( Double.valueOf((int) y.get(idx) ) - this.mean) / std_deviation, 4);
 			}
+			//divide by n
 			this.kurtosis = this.kurtosis / y.size();
 
 			// size / length
@@ -715,8 +734,7 @@ public class Workbench {
 			this.eeg		= raw_eeg;
 			this.freq_space		= new JSONArray();
 			this.freq_magnitudes 	= new JSONArray();
-
-			this.sample_rate	= 512;
+			this.sample_rate	= 100;
 			this.zero_padding	= 0;
 		}
 
@@ -745,7 +763,7 @@ public class Workbench {
 		}
 
 		private void _transform() {
-			ArrayList<Double> og_raw = new ArrayList<Double>();
+			ArrayList<Double> og_raw = new ArrayList<>();
 
 			for( int idx = 0; idx < this.eeg.size(); idx += 1) {
 				long i = (long) this.eeg.get(idx);
@@ -758,7 +776,6 @@ public class Workbench {
 			while ( p < og_raw.size() ) {
 				p2 += 1;
 				p = (int) Math.pow(2, p2);
-
 			}
 
 			this.zero_padding = p - og_raw.size();
@@ -770,7 +787,6 @@ public class Workbench {
 			for (int xj = 0; xj < og_raw.size(); xj += 1) {
 				og_raw_arr[xj] = og_raw.get(xj);
 			}
-
 
 			this.raw_transform_data = t.forward(og_raw_arr);
 
@@ -896,6 +912,7 @@ public class Workbench {
 	
 	};
 
+	//TODO: thorough review of fft functions and implementation
 	private class ApacheFFT extends SignalTransformer {
 		FastFourierTransformer	fft;
 		Complex[] 		fft_og_raw;
@@ -924,7 +941,8 @@ public class Workbench {
 				// only go up to 50hz (eeg signals stop there)
 				for ( int current_freq = 0, i = 0; current_freq <= 50; current_freq += 1) {
 					int max_freq_val = 0;	
-					
+
+					//TODO: find the index out of bounds error
 					while(current_freq == (int) this.freq_space.get(i)) {
 						if (max_freq_val < (int) this.freq_magnitudes.get(i)) {
 							max_freq_val = (int) this.freq_magnitudes.get(i);	

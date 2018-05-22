@@ -19,6 +19,7 @@
 	var current_chart_band	= "frequency";
 
 	// utils
+	// populates the drop down menus for source and target in the right panel
 	function refresh_listing(d) {
 		var source_sel = "#eeg-source-select";
 		var target_sel = "#eeg-target-select";
@@ -35,6 +36,8 @@
 
 	}
 
+	
+	// loads selected json file into a listview 
 	function load_eeg_set(e) {
 		var bttn_id	= e.currentTarget.id;
 		var source_sel	= "#eeg-source-select";
@@ -44,6 +47,7 @@
 		var eeg_set = "";
 	
 		var get_params = {};
+		// determine which button was pressed
 		if ( bttn_id === "eeg-source-load-bttn") {
 			get_params = { file: $(source_sel).val() };
 			eeg_set = "source";
@@ -53,6 +57,7 @@
 			eeg_set = "target";
 		}
 	
+		// get datasets from file and populate the listview
 		$.ajax({url: "/json", 
 			method: "GET", 
 			data: get_params, 
@@ -103,6 +108,9 @@
 		
 	}
 
+	// creates a formatted csv string 
+	// string represents either a comparison of two datasets from different person or
+	// string represents a self similarity comparison between two or more datasets from the same person
 	function format_csv(chart_data) {
 		var dataset_type = current_chart_band;
 		var csv 	= "";
@@ -118,8 +126,10 @@
 			}
 
 			// set up data
+			// ensure that the datapoints align with their corresponding x value
 			for( var i = 0; i < data_max; i += 1 ) {
 				// x
+				// x value will be included if its in either set or both
 				if (chart_data["src"][dataset_type]["x"][i]) {
 					csv = csv + chart_data["src"][dataset_type]["x"][i] + ",";
 				}
@@ -129,6 +139,7 @@
 
 
 				// y 
+				// if no y value is available, add a blank entry for y
 				if ( chart_data["src"][dataset_type]["x"][i] ) {
 					csv = csv + chart_data["src"][dataset_type]["y"][i] + ",";
 				}
@@ -144,6 +155,7 @@
 
 		}
 		// otherwise, chart self similarity set
+		// self similarity is a comparison between two datasets from the same person
 		else {
 
 			//build header row
@@ -189,6 +201,10 @@
 		return csv;
 	}
 
+	// calculates and populates the fields for all features
+	// builds and displays a table for each feature
+	// @param ctx: the string tag for the data to be populated (source or target)
+	// @param d: the data set
 	function init_data(ctx, d) {
 		var features = [ "std_deviation", 
 				"msv", 
@@ -209,6 +225,7 @@
 			set_css_sel = "-target" + set_css_sel;
 		}
 
+		// build an html table for each feature 
 		for (var f = 0; f < features.length; f += 1 ) {
 			msv_tbl = $("#" + features[f] + set_css_sel);
 			msv_tbl.empty();
@@ -229,6 +246,11 @@
 
 	}
 
+	// populates the cosing similarity, svm, and mlp fields
+	// this function appears to not display correct data and looks like it has not yet been implemented
+	// @param cs: real number value for cosine similarity
+	// @param mlp: real number value for mlp
+	// @param svm: real number value for svm
 	function init_cosinesim(cs,mlp,svm) {
 		$("#cosine-sim").html(cs);
 		$("#mlp-class").html(mlp);
@@ -253,14 +275,16 @@
 		$("#target-self-chart").parent().show();
 		$("#eeg-cross-chart").parent().show();
 
+		//create x graph
 		var cross_dgraph = new Dygraph( document.getElementById("eeg-cross-chart"), 
 			format_csv(current_eeg.cross),
 			{ width: 800 });
 
+		// create source graph
 		var src_dgraph	= new Dygraph( document.getElementById("source-self-chart"),
 				format_csv(current_eeg.src),
 				{ width: 800 });
-
+		// create target graph
 		var tgt_dgraph	= new Dygraph( document.getElementById("target-self-chart"),
 				format_csv(current_eeg.tgt),
 				{ width: 800 });
@@ -303,7 +327,6 @@
 	// END Chart Drawing UX
 
 	function compute_eeg(b) {
-
 		var act = "compute";
 		var export_json = 0;
 
@@ -319,12 +342,12 @@
 		var source_file		= $("#eeg-source-select").val();
 		var source_eegs		= [];
 		var source_cross	= "";
-	 	$("#eeg-source-set input[type=checkbox]:checked").each(function(i,e) {
+		$("#eeg-source-set input[type=checkbox]:checked").each(function(i,e) {
 				var es = e.value.split('_');
 				source_eegs.push(es[1]);
 			});
 
-	 	$("#eeg-source-set input[type=radio]:checked").each(function(i,e) {
+		$("#eeg-source-set input[type=radio]:checked").each(function(i,e) {
 				var es = e.value.split('_');
 				source_cross = es[1];
 			});
@@ -338,7 +361,7 @@
 				target_eegs.push(es[1]);
 			});
 
-	 	$("#eeg-target-set input[type=radio]:checked").each(function(i,e) {
+		$("#eeg-target-set input[type=radio]:checked").each(function(i,e) {
 				var es = e.value.split('_');
 				target_cross = es[1];
 			});
@@ -355,6 +378,28 @@
 		var prefreq_param	= $("#eeg-prefreq-select").val();
 		//var classify_param	= $("#eeg-classify-select").val();
 
+		//check to make sure the data was successfully loaded
+		if(source_eegs.length === 0){
+			alert("failed to load source");
+			return;
+		}
+		else if(target_eegs.length === 0){
+			alert("failed to load target");
+			return;
+		}
+		else if(featband_param.length === 0){
+			alert("please select one or more feature bands")
+			return;
+		}
+		else if(feature_param.length === 0){
+			alert("please select one of more features")
+			return;
+		}
+		else if(prefreq_param.length === 0){
+			alert("please select a prefrequency")
+			return;
+		}
+		
 		var eeg_params = { src: source_file, 
 			src_eegs: source_eegs,
 			src_cross: source_cross,
@@ -419,6 +464,7 @@
 							} 
 						}); 
 			}
+		
 	}
 
 	// page load (i.e. 'ready')
