@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<head>
+<title>Workbench</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<link rel="stylesheet" href="css/pure-min.css">
+
+<style type="text/css" >
+.pure-table { width: 80%; }
+/*.data-padding div, .data-padding table, .data-padding button { padding-left: 5px; } */
+
+div.config-column {
+	background-color: #DDDDDD;
+	color: #333;
+}
+
+.button-success,
+.button-error,
+.button-warning,
+.button-secondary {
+    color: white;
+    border-radius: 4px;
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+}
+
+.button-success {
+    background: rgb(28, 184, 65); /* this is a green */
+}
+
+.button-error {
+    background: rgb(202, 60, 60); /* this is a maroon */
+}
+
+.button-warning {
+    background: rgb(223, 117, 20); /* this is an orange */
+}
+
+.button-secondary {
+    background: rgb(66, 184, 221); /* this is a light blue */
+}
+
+#eeg-feature-data {
+	margin-top: 20px;
+	height: 900px;
+	overflow: scroll;
+}
+
+#eeg-feature-data > h2,
+#eeg-feature-data > h3,
+#eeg-feature-data > h4,
+#eeg-feature-data > table,
+div.config-column > div,
+div.config-column > h1, 
+div.config-column > h2 {
+	margin-left: 10px;
+}
+
+#eeg-chart-bttn-row > .pure-menu {
+	margin: 10px 0 0 10px;
+}
+
+#eeg-source-set-wrap, #eeg-target-set-wrap {
+	height: 150px;
+	overflow: scroll;
+}
+
+#band-filters {
+	margin-left: 15px;
+}
+
+#band-filters > label {
+	font-size: 0.8em;
+}
+
+</style>
+
+</head>
+<body>
+
+	<div class="pure-g data-padding" >
+			
+		<div class="pure-u-2-3" id="eeg-chart-bttn-row" >
+			<div class="pure-menu pure-menu-horizontal" >
+				<ul class="pure-menu-list" >
+					<li class="pure-menu-item" > <button class="pure-button" 
+						id="source-self-bttn" >Source (S)</button>
+					</li>
+					<li class="pure-menu-item" > <button class="pure-button" 
+						id="target-self-bttn" >Target (S)</button>
+					</li>
+					<li class="pure-menu-item" > <button class="pure-button" 
+						id="eeg-cross-bttn" >Cross (X)</button>
+					</li>
+			<li class="pure-menu-item" id="band-filters">
+				<label for="graph-raw-radio">Raw</label>
+				<input type="radio" name="eeg-band" 
+					id="graph-raw-radio" value="raw" />
+
+				<label for="graph-freq-radio">Frequency</label>
+				<input type="radio" name="eeg-band" 
+					id="graph-freq-radio" value="frequency" checked />
+
+				<label for="graph-delta-radio">Delta</label>
+				<input type="radio" name="eeg-band" 
+					id="graph-delta-radio" value="delta" />
+			
+				<label for="graph-theta-radio">Theta</label>
+				<input type="radio" name="eeg-band" 
+					id="graph-theta-radio" value="theta" />
+			
+				<label for="graph-alpha-radio">Alpha</label>
+				<input type="radio" name="eeg-band" 
+					id="graph-alpha-radio" value="alpha" />
+
+				<label for="graph-beta-radio">Beta</label>
+				<input type="radio" name="eeg-band" 
+					id="graph-beta-radio" value="beta" />
+
+				<label for="graph-gamma-radio">Gamma</label>
+				<input type="radio" name="eeg-band" 
+					id="graph-gamma-radio" value="gamma" />
+			</li>
+				</ul>
+			</div>
+
+			<!--
+			<div class="three columns" >
+				<input	type="button" 
+					id="entropy-bttn" 
+					value="Entropy" />
+			</div>
+			-->
+		</div>
+		<div class="pure-u-1-3 config-column" >
+			<h1>EEG Workbench</h1>
+		</div>
+	</div>
+	<div class="pure-g data-padding" >
+		<div class="pure-u-2-3" >	
+			<div class="eeg-chart-row" >
+				<div class="eeg-chart" id="source-self-chart" ></div>
+			</div>
+			<div class="eeg-chart-row" >
+				<div class="eeg-chart" id="target-self-chart" ></div>
+			</div>
+			<div class="eeg-chart-row" >
+				<div class="eeg-chart" id="eeg-cross-chart" ></div>
+			</div>
+			
+			<div id="eeg-feature-data" >
+			<h2>Features</h2>	
+		
+			<h3>Mean</h3>	
+				<h4>Source</h4>
+				<table id="mean-source-set" class="pure-table" >
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>Alpha</th>
+							<th>Beta</th>
+							<th>Gamma</th>
+							<th>Theta</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+				<h4>Target</h4>
+				<table id="mean-target-set" class="pure-table" >
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>Alpha</th>
+							<th>Beta</th>
+							<th>Gamma</th>
+							<th>Theta</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+			
+			<h3>Mean Value Square (MSV)</h3>	
+				<h4>Source</h4>
+				<table id="msv-source-set" class="pure-table" >
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>Alpha</th>
+							<th>Beta</th>
+							<th>Gamma</th>
+							<th>Theta</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+				<h4>Target</h4>
+				<table id="msv-target-set" class="pure-table" >
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>Alpha</th>
+							<th>Beta</th>
+							<th>Gamma</th>
+							<th>Theta</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+			
+			<h3>Standard Deviation</h3>
+				<h4>Source</h4>
+				<table id="std_deviation-source-set" class="pure-table" >
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>Alpha</th>
+							<th>Beta</th>
+							<th>Gamma</th>
+							<th>Theta</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+				<h4>Target</h4>
+				<table id="std_deviation-target-set" class="pure-table" >
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>Alpha</th>
+							<th>Beta</th>
+							<th>Gamma</th>
+							<th>Theta</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+			
+			<h3>Activity (Hjorth)</h3>
+				<h4>Source</h4>	
+				<table id="activity-source-set" class="pure-table" >
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>Alpha</th>
+							<th>Beta</th>
+							<th>Gamma</th>
+							<th>Theta</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+				<h4>Target</h4>
+				<table id="activity-target-set" class="pure-table" >
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>Alpha</th>
+							<th>Beta</th>
+							<th>Gamma</th>
+							<th>Theta</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+
+			<h3>Mobility (Hjorth)</h3>
+				<h4>Source</h4>
+				<table id="mobility-source-set" class="pure-table" >
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>Alpha</th>
+							<th>Beta</th>
+							<th>Gamma</th>
+							<th>Theta</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+				<h4>Target</h4>
+				<table id="mobility-target-set" class="pure-table" >
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>Alpha</th>
+							<th>Beta</th>
+							<th>Gamma</th>
+							<th>Theta</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+
+			<h3>Complexity (Hjorth)</h3>
+				<h4>Source</h4>
+				<table id="complexity-source-set" class="pure-table" >
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>Alpha</th>
+							<th>Beta</th>
+							<th>Gamma</th>
+							<th>Theta</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+				<h4>Target</h4>
+				<table id="complexity-target-set" class="pure-table" >
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>Alpha</th>
+							<th>Beta</th>
+							<th>Gamma</th>
+							<th>Theta</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+
+			<h3>Skewness</h3>
+				<h4>Source</h4>
+				<table id="skewness-source-set" class="pure-table" >
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>Alpha</th>
+							<th>Beta</th>
+							<th>Gamma</th>
+							<th>Theta</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+				<h4>Target</h4>
+				<table id="skewness-target-set" class="pure-table" >
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>Alpha</th>
+							<th>Beta</th>
+							<th>Gamma</th>
+							<th>Theta</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+
+			<h3>Kurtosis</h3>
+				<h4>Source</h4>
+				<table id="kurtosis-source-set" class="pure-table" >
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>Alpha</th>
+							<th>Beta</th>
+							<th>Gamma</th>
+							<th>Theta</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+				<h4>Target</h4>
+				<table id="kurtosis-target-set" class="pure-table" >
+					<thead>
+						<tr>
+							<th>#</th>
+							<th>Alpha</th>
+							<th>Beta</th>
+							<th>Gamma</th>
+							<th>Theta</th>
+						</tr>
+					</thead>
+					<tbody>
+					</tbody>
+				</table>
+
+			<h2>Classification Results</h2>	
+			<table class="pure-table" >
+				<thead>
+					<tr>
+					<th>Cosine Simularity</th>
+					<th>SVM (libSVM)</th>
+					<th>MLP (Neuroph)</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr>
+					<td><p id="cosine-sim" ></p></td>
+					<td><p id="svm-class" ></p></td>
+					<td><p id="mlp-class" ></p></td>
+					</tr>
+				</tbody>
+			</table>
+
+			</div> <!-- end feature data -->
+
+		</div>
+		<div class="pure-u-1-3 config-column" >
+			<h2>Signal Input</h2>
+			<div>
+			<h3>Source</h3>	
+				<form class="pure-form" id="eeg-source-form" >
+					<fieldset>
+					<select class="u-full-width" id="eeg-source-select"></select>
+					<button type="button" class="pure-button" 
+						id="eeg-source-load-bttn" >load</button>
+					</fieldset>
+				</form>
+				<div id="eeg-source-set-wrap" >
+				<table id="eeg-source-set" class="pure-table pure-table-horizontal">
+				  <thead>
+				    <tr>
+					<th>Sensor</th>
+					<th>Index (points)</th>
+					<th>S</th>
+					<th>X</th>
+				    </tr>
+				  </thead>
+				  <tbody>
+				  </tbody>
+				</table>
+				</div>
+			</div>	
+			<div>
+			<h3>Target</h3>
+				<form class="pure-form" id="eeg-target-form" >
+				<fieldset>
+					<select class="" id="eeg-target-select"></select>
+					<button type="button" class="pure-button" 
+						id="eeg-target-load-bttn" >load</button>
+				</fieldset>
+				</form>
+				<div id="eeg-target-set-wrap" >
+				<table id="eeg-target-set" class="pure-table pure-table-horizontal">
+				  <thead>
+				    <tr>
+					<th>Sensor</th>
+					<th>Index (points)</th>
+					<th>S</th>
+					<th>X</th>
+				    </tr>
+				  </thead>
+				  <tbody>
+				  </tbody>
+				</table>
+				</div>
+			</div>
+			<div>
+			<h3>Preprocessing</h3>
+			<form class="pure-form" >
+				<select class="" id="eeg-prefreq-select">
+					<option value="fft_apache">
+					Fast Fourier Transform (Apache Commons)
+					</option>
+					<option value="fft_jwave">
+					Fast Fourier Transform (JWave)
+					</option>
+					<option value="db2_jwave">
+					Daubechies-2 Wavelet (JWave)
+					</option>
+					<option value="db4_jwave">
+					Daubechies-4 Wavelet (JWave)
+					</option>
+					<option value="haar_jwave">
+					Haar Wavelet (JWave)
+					</option>
+				</select>
+			</form>
+			</div>
+	
+			<div>
+			<h2>Feature Extraction</h2>
+				<h3>Time Domain</h3>
+				<table id="eeg-features-set" class="pure-table pure-table-horizontal">
+				  <thead>
+				  </thead>
+				  <tbody>
+					<tr>
+						<td>
+						<input type="checkbox" name="feature" 
+							value="mean" id="feature-mean" />
+						</td>
+						<td>
+						<label for="feature-mean" >Mean</label>
+						</td>
+						<td>
+						<input type="checkbox" name="feature" 
+							value="std_deviation" id="feature-std_deviation" />
+						</td>
+						<td>
+						<label for="feature-std_deviation" >Standard Deviation</label>
+						</td>
+					</tr>
+					<tr>
+						<td>
+						<input type="checkbox" name="feature" 
+							value="activity" id="feature-activity" />
+						</td>
+						<td>
+						<label for="feature-activity" >Activity</label>
+						</td>
+						<td>
+						<input type="checkbox" name="feature" 
+							value="mobility" id="feature-mobility" />
+						</td>
+						<td>
+						<label for="feature-mobility" >Mobility</label>
+						</td>
+					</tr>
+					<tr>
+						<td>
+						<input type="checkbox" name="feature" 
+							value="complexity" id="feature-complexity" />
+						</td>
+						<td>
+						<label for="feature-complexity" >Complexity</label>
+						</td>
+						<td>
+						<input type="checkbox" name="feature" 
+							value="skewness" id="feature-skewness" />
+						</td>
+						<td>
+						<label for="feature-skewness" >Skewness</label>
+						</td>
+					</tr>
+					<tr>
+						<td>
+						<input type="checkbox" name="feature" 
+							value="kurtosis" id="feature-kurtosis" />
+						</td>
+						<td>
+						<label for="feature-kurtosis" >Kurtosis</label>
+						</td>
+						<td>
+						<input type="checkbox" name="feature" 
+							value="msv" id="feature-msv" />
+						</td>
+						<td>
+						<label for="feature-msv" >
+						Mean Sample Value</label>
+						</td>
+					</tr>
+				  </tbody>
+				</table>
+			
+				<!--	
+				<h3>Frequency Domain</h3>		
+				<table class="pure-table pure-table-horizontal" >
+					<thead></thead>
+					<tbody></tbody>
+				</table>	
+				-->
+				<p>Over</p>	
+				
+				<table id="eeg-features-band-set" class="pure-table pure-table-horizontal">
+					<thead></thead>
+					<tbody>
+						<tr>
+							<td>
+							<input type="checkbox" name="feature_band" 
+								value="delta" id="feature-band-delta" />
+							</td>
+							<td>
+							<label for="feature-band-delta" >Delta</label>
+							</td>
+							<td>
+							<input type="checkbox" name="feature_band" 
+								value="alpha" id="feature-band-alpha" />
+							</td>
+							<td>
+							<label for="feature-band-alpha" >Alpha</label>
+							</td>
+						</tr>
+						<tr>
+							<td>
+							<input type="checkbox" name="feature_band" 
+								value="beta" id="feature-band-beta" />
+							</td>
+							<td>
+							<label for="feature-band-beta" >Beta</label>
+							</td>
+							<td>
+							<input type="checkbox" name="feature_band" 
+								value="theta" id="feature-band-theta" />
+							</td>
+							<td>
+							<label for="feature-band-theta" >Theta</label>
+							</td>
+						</tr>
+						<tr>
+							<td>
+							<input type="checkbox" name="feature_band" 
+								value="gamma" id="feature-band-gamma" />
+							</td>
+							<td>
+							<label for="feature-band-gamma" >Gamma</label>
+							</td>
+							<td>
+							</td>
+							<td>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				<!--
+				<form class="pure-form" id="eeg-target-form" >
+				<button id="eeg-export-matlab-bttn" type="button"
+					class="pure-button button-warning" >Export For Matlab</button>
+				</form>
+				-->
+				<p></p>
+				<form class="pure-form" id="eeg-compute-form" 
+					method="post" action="/json" >
+				<button id="eeg-compute-bttn" type="button"
+					class="pure-button button-success" >Compute</button>
+				<input type="submit" id="eeg-exportjson-bttn" 
+					class="pure-button button-secondary" value="Export JSON" />
+				</form>
+			</div>
+			
+		</div>
+	</div>
+
+	</div>
+
+<script src="js/dygraph-combined.js" ></script>
+<script src="js/jquery-3.1.1.min.js" ></script>
+<script src="js/workbench.js" ></script>
+</body>
+</html>

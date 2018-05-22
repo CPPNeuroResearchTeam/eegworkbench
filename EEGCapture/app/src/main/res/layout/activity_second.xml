@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/activity_second"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.workbench.eeg.eegcapture.SecondActivity">
+
+    <TextView
+        android:id="@+id/second_app_training_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Training Activity" />
+
+    <TextView
+        android:id="@+id/press_status_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/second_app_training_tv"
+        android:text="" />
+
+    <TextView
+        android:id="@+id/eeg_value_tv"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/press_status_tv"
+        android:text="" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/press_status_tv"
+        android:enabled="false"
+        android:text="@string/button_next"
+        android:onClick="toReport"
+        android:id="@+id/next_button2"
+        />
+
+
+    <TextView
+        android:id="@+id/passthought"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/next_button2"
+        android:text="PRESS/DEPRESS SCREEN"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="150dp" />
+
+</RelativeLayout>
