@@ -27,7 +27,7 @@ namespace NeuroCollector
         private String DEVICE_NAME = "MindWave Mobile";
         private NativeThinkgear nativeThinkgear = new NativeThinkgear();
 
-        // Connection tatus 
+        // Connection status 
         public int AWAITING_CONNECTION = 0;
         public int CONNECTED = 1;
         private int connectionState = 0; // default to awaiting connection

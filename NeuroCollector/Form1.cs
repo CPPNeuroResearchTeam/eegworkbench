@@ -27,6 +27,7 @@ namespace NeuroCollector
 
         // Time Variables
         private DateTime start;
+        private int readTimeMS; // number of milliseconds in the read period
 
         // EEG Variables
         private List<int> yvalues = new List<int>();
@@ -39,7 +40,6 @@ namespace NeuroCollector
         // Output variables
         string CHART_DIR = Environment.CurrentDirectory + "\\EEG\\charts\\";
         string JSON_DIR = Environment.CurrentDirectory + "\\EEG\\json\\";
-        const string JSON_EXT = ".json";
 
         public Form1()
         {
@@ -61,6 +61,8 @@ namespace NeuroCollector
 
             connection.attemptConnection();
 
+
+            // TODO: remove these, they are no longer necessary
             yAxisUpperNumericalUpDown.ValueChanged += new System.EventHandler(OnChartAreaChanged);
             yAxisLowerNumericalUpDown.ValueChanged += new System.EventHandler(OnChartAreaChanged);
             silentReadTimeNumericalUpDown.ValueChanged += new System.EventHandler(OnChartAreaChanged);
@@ -93,6 +95,7 @@ namespace NeuroCollector
         private void startCaptureButton_Click(object sender, EventArgs e)
         {
             bool startTrial = true;
+            readTimeMS = (int)(silentReadTimeNumericalUpDown.Value + eventReadTimeNumericalUpDown.Value) * 1000; 
 
             if (String.IsNullOrEmpty(fileNameTextBox.Text))
             {
@@ -103,7 +106,7 @@ namespace NeuroCollector
                                              MessageBoxIcon.Error);
                 startTrial = false;
             }
-            else if (File.Exists(getJsonPath()))
+            else if (File.Exists(JSON_DIR + fileNameTextBox.Text + "_silent.json"))  // check to see if this is already a set of files
             {
                 const string message = "This file already exists \nWould you like to overwrite it?";
                 const string caption = "File exists";
@@ -120,6 +123,7 @@ namespace NeuroCollector
                 start = DateTime.Now;
                 enableControls(false);
                 connection.startDataFeed();
+
             }
         }
 
@@ -246,7 +250,7 @@ namespace NeuroCollector
         }
 
         /* 
-         * Redraws the EEG real time chart in a threadsafe manner
+         * Redraws the EEG chart in a threadsafe manner
          */
         private void updateChart()
         {
@@ -270,21 +274,30 @@ namespace NeuroCollector
                 EEGChart.ChartAreas[0].AxisY.StripLines.Add(zeroLine);
 
                 //TODO: Force zero to appear on y axis labeling
-                
+
                 // Shade event region of chart
                 StripLine eventStart = new StripLine();
                 eventStart.Interval = 0; // Causes strip to be drawn only once
-                eventStart.IntervalOffset = (double)silentReadTimeNumericalUpDown.Value * 1000; // Convert seconds into milliseconds
-                eventStart.StripWidth = (int)eventReadTimeNumericalUpDown.Value * 1000; // Amount of time event is being recorded converted to milliseconds
+                eventStart.IntervalOffset = currentCapture.getSilentYVals().Count;
+                eventStart.StripWidth = currentCapture.getEventYVals().Count; // Amount of time event is being recorded converted to milliseconds
                 eventStart.BackColor = Color.FromArgb(100, Color.OrangeRed);
                 EEGChart.ChartAreas[0].AxisX.StripLines.Add(eventStart);
 
                 // Adding point offscreen forces chart to draw
                 EEGChart.Series["Series1"].Points.AddXY(-1, 0);
 
-                foreach (Point pnt in currentCapture.getRawEEGPoints())
+                resizeChart();
+
+                int x = 0;
+                foreach(double y in currentCapture.getSilentYVals())
                 {
-                    EEGChart.Series["Series1"].Points.AddXY(pnt.x, pnt.y);
+                    EEGChart.Series["Series1"].Points.AddXY(x, y);
+                    x++;
+                }
+                foreach (double y in currentCapture.getEventYVals())
+                {
+                    EEGChart.Series["Series1"].Points.AddXY(x, y);
+                    x++;
                 }
 
             }
@@ -296,16 +309,14 @@ namespace NeuroCollector
         }
 
 
-
-
         public void OnNewDataValueReceived(object source, EventArgs e)
         {
             RawDataValue newData = (RawDataValue)e;
             double y = newData.getRawValue();
-            double x = (DateTime.Now.Ticks - start.Ticks) / TimeSpan.TicksPerMillisecond;
+            double time = (DateTime.Now.Ticks - start.Ticks) / TimeSpan.TicksPerMillisecond;
             byte signalQuality = newData.getSignalQuality();
 
-            if (x > (int)this.silentReadTimeNumericalUpDown.Value * 1000)
+            if (time > (int)this.silentReadTimeNumericalUpDown.Value * 1000)
             {
                 if (!isPlaying)
                 {
@@ -313,8 +324,10 @@ namespace NeuroCollector
                     isPlaying = true;
                 }
             }
-            if (x > this.EEGChart.ChartAreas[0].AxisX.Maximum)// Time has ended
+            if (time > readTimeMS)// Time has ended
             {
+                updateChart();
+
                 stopDataFeed();
                 enableControls(true);
                 if (isPlaying)
@@ -324,19 +337,21 @@ namespace NeuroCollector
                 }
 
                 //Save Json file
-                currentCapture.exportJson(getJsonPath());
+                currentCapture.exportJson(JSON_DIR, fileNameTextBox.Text);
 
                 //Save chart image
                 SaveChart();
                 
             }
+
+            if (!isPlaying)
+            {
+                currentCapture.addSilentPoint(y, signalQuality);
+            }
             else
             {
-                currentCapture.addRawPoint(x, y, signalQuality);
-                updateChart();
+                currentCapture.addEventPoint(y, signalQuality);
             }
-
-
         }
 
 
@@ -393,7 +408,7 @@ namespace NeuroCollector
         }
 
         private void resizeChart() {
-            int xMax = (int)(silentReadTimeNumericalUpDown.Value + eventReadTimeNumericalUpDown.Value) * 1000; // seconds are converted to milliseconds
+            int xMax = currentCapture.getSilentYVals().Count + currentCapture.getEventYVals().Count;
 
             this.EEGChart.ChartAreas[0].AxisX.Minimum = 0; // Time always starts at 0           
             this.EEGChart.ChartAreas[0].AxisX.Maximum = xMax;
@@ -401,10 +416,6 @@ namespace NeuroCollector
             this.EEGChart.ChartAreas[0].AxisY.Minimum = (int)yAxisLowerNumericalUpDown.Value; // Ensure chart is symmetrical
             this.EEGChart.ChartAreas[0].AxisY.Maximum = (int)yAxisUpperNumericalUpDown.Value;
         }
-
-        public string getJsonPath() {
-            return JSON_DIR + fileNameTextBox.Text + JSON_EXT;
-        } 
 
         private void enableControls(bool enabled) {
             setControlEnabled(enabled, reconnectButton);

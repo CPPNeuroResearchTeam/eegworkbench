@@ -20,46 +20,81 @@ namespace NeuroCollector
      * The higher the number, the more noise is detected. 
      * A value of 200 has a special meaning, specifically that the ThinkGear electrodes aren't contacting a person's skin.
      */
-    struct Point {
-        public double x;
-        public double y;
-        public int signalQuality;
+    struct JsonObject {
+        public string device;
+        public string version;
+        public string sample_rate;
+        public string record_datetime;
+        public List<double> FP1;
     }
 
     class EEGCapture
     {
-        //Raw EEG
-        private List<Point> rawEEGPoints = new List<Point>();
+        // silent read data
+        private List<double> silentYVals = new List<double>();
+        private List<double> eventYVals = new List<double>();
+
+        // event read data
+        private List<byte> silentSignalQualities = new List<byte>();
+        private List<byte> eventSignalQualities = new List<byte>();
 
         public EEGCapture() {
         }
 
         // Getters and Setters
-        public List<Point> getRawEEGPoints() { return rawEEGPoints; }
+        public List<double> getSilentYVals() { return silentYVals; }
+        public List<double> getEventYVals() { return eventYVals;  }
+        public List<byte> getSilentSignalQualities() { return silentSignalQualities; }
+        public List<byte> getEventSignalQualities() { return eventSignalQualities; }
+
 
         public void clearData() {
-            rawEEGPoints.Clear();
+            silentYVals.Clear();
+            silentSignalQualities.Clear();
+            eventYVals.Clear();
+            eventSignalQualities.Clear();
         }
 
-        // x will be a time value and y will be voltage reading from the device
-        public void addRawPoint(double x, double y, byte signalQuality) {
-            Point p;
-            p.x = x;
-            p.y = y;
-            p.signalQuality = signalQuality;
-            rawEEGPoints.Add(p);           
+        // voltage reading from the device
+        public void addSilentPoint(double y, byte signalQuality) {
+            silentYVals.Add(y);
+            silentSignalQualities.Add(signalQuality);
         }
 
-        public void exportJson(string filePath) {
+        public void addEventPoint(double y, byte signalQuality) {
+            eventYVals.Add(y);
+            eventSignalQualities.Add(signalQuality);
+        }
 
-            //string sensor = "FP1"; //neurosky has a single sensor
-            //string device = "NSKYMW";
-            //string sample_rate = "512";
-            //string eegwb_ver = "1";
-            
-            string json = JsonConvert.SerializeObject(rawEEGPoints.ToArray());
+        /*
+         * exports all collected data to the json_dir
+         * each read will produce three files in a set from the same subject
+         * @param json_dir: directory of the json files
+         * @param set: each of three files will have this associated set name
+         */
+        public void exportJson(string json_dir, string set) {
+            List<JsonObject> data = new List<JsonObject>();
 
-            System.IO.File.WriteAllText(filePath, json);
+            JsonObject data1 = new JsonObject();
+
+            string silentPath = json_dir + set + "_silent.json";
+            string eventPath = json_dir + set + "_event.json";
+
+            // set tags 
+            data1.device = "NSKYMW";
+            data1.sample_rate = "512";
+            data1.version = "1";
+            data1.record_datetime = DateTime.Now.ToString();
+
+            // pring silent read
+            data1.FP1 = silentYVals;
+            string json = JsonConvert.SerializeObject(data);
+            System.IO.File.WriteAllText(silentPath, json);
+
+            // print event read
+            data1.FP1 = eventYVals;
+            json = JsonConvert.SerializeObject(data);
+            System.IO.File.WriteAllText(eventPath, json);
         }
 
         /*
