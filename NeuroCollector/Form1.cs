@@ -38,12 +38,16 @@ namespace NeuroCollector
         private bool isPlaying = false;
 
         // Output variables
-        string CHART_DIR = Environment.CurrentDirectory + "\\EEG\\charts\\";
-        string JSON_DIR = Environment.CurrentDirectory + "\\EEG\\json\\";
+        string PROJ_DIR = Path.GetFullPath("..//..//..//..");  // eegworkbench is the project directory
+        string CHART_DIR;
+        string JSON_DIR;
 
         public Form1()
         {
             InitializeComponent();
+
+            CHART_DIR = PROJ_DIR + "\\workbench\\eeg_data\\charts\\";
+            JSON_DIR = PROJ_DIR + "\\workbench\\eeg_data\\";
 
             connection.StatusChanged += this.OnConnectionStatusChanged;
             connection.NewInformation += this.OnNewConnectionProgressAvailable;
@@ -60,7 +64,6 @@ namespace NeuroCollector
             EEGChart.ChartAreas[0].AxisY.Title = "ASIC_EEG_POWER";
 
             connection.attemptConnection();
-
 
             // TODO: remove these, they are no longer necessary
             yAxisUpperNumericalUpDown.ValueChanged += new System.EventHandler(OnChartAreaChanged);
@@ -312,8 +315,8 @@ namespace NeuroCollector
         public void OnNewDataValueReceived(object source, EventArgs e)
         {
             RawDataValue newData = (RawDataValue)e;
-            double y = newData.getRawValue();
-            double time = (DateTime.Now.Ticks - start.Ticks) / TimeSpan.TicksPerMillisecond;
+            long y = newData.getRawValue();
+            long time = (DateTime.Now.Ticks - start.Ticks) / TimeSpan.TicksPerMillisecond;
             byte signalQuality = newData.getSignalQuality();
 
             if (time > (int)this.silentReadTimeNumericalUpDown.Value * 1000)

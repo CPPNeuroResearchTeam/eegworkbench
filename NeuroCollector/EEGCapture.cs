@@ -20,19 +20,25 @@ namespace NeuroCollector
      * The higher the number, the more noise is detected. 
      * A value of 200 has a special meaning, specifically that the ThinkGear electrodes aren't contacting a person's skin.
      */
+
+    //TODO: fix how this prints json
     struct JsonObject {
+        public List<Diode> data; 
+    }
+    
+    struct Diode {
         public string device;
         public string version;
         public string sample_rate;
         public string record_datetime;
-        public List<double> FP1;
+        public List<long> FP1;
     }
 
     class EEGCapture
     {
         // silent read data
-        private List<double> silentYVals = new List<double>();
-        private List<double> eventYVals = new List<double>();
+        private List<long> silentYVals = new List<long>();
+        private List<long> eventYVals = new List<long>();
 
         // event read data
         private List<byte> silentSignalQualities = new List<byte>();
@@ -42,8 +48,8 @@ namespace NeuroCollector
         }
 
         // Getters and Setters
-        public List<double> getSilentYVals() { return silentYVals; }
-        public List<double> getEventYVals() { return eventYVals;  }
+        public List<long> getSilentYVals() { return silentYVals; }
+        public List<long> getEventYVals() { return eventYVals;  }
         public List<byte> getSilentSignalQualities() { return silentSignalQualities; }
         public List<byte> getEventSignalQualities() { return eventSignalQualities; }
 
@@ -56,12 +62,12 @@ namespace NeuroCollector
         }
 
         // voltage reading from the device
-        public void addSilentPoint(double y, byte signalQuality) {
+        public void addSilentPoint(long y, byte signalQuality) {
             silentYVals.Add(y);
             silentSignalQualities.Add(signalQuality);
         }
 
-        public void addEventPoint(double y, byte signalQuality) {
+        public void addEventPoint(long y, byte signalQuality) {
             eventYVals.Add(y);
             eventSignalQualities.Add(signalQuality);
         }
@@ -73,59 +79,34 @@ namespace NeuroCollector
          * @param set: each of three files will have this associated set name
          */
         public void exportJson(string json_dir, string set) {
-            List<JsonObject> data = new List<JsonObject>();
+            JsonObject obj = new JsonObject();
 
-            JsonObject data1 = new JsonObject();
+            obj.data = new List<Diode>();
+
+            Diode d = new Diode();
 
             string silentPath = json_dir + set + "_silent.json";
             string eventPath = json_dir + set + "_event.json";
 
             // set tags 
-            data1.device = "NSKYMW";
-            data1.sample_rate = "512";
-            data1.version = "1";
-            data1.record_datetime = DateTime.Now.ToString();
+            d.device = "NSKYMW";
+            d.sample_rate = "512";
+            d.version = "1";
+            d.record_datetime = DateTime.Now.ToString();
 
             // pring silent read
-            data1.FP1 = silentYVals;
-            string json = JsonConvert.SerializeObject(data);
+            d.FP1 = silentYVals;
+            obj.data.Add(d);
+            string json = JsonConvert.SerializeObject(obj);
             System.IO.File.WriteAllText(silentPath, json);
 
+            obj.data.Clear();
+
             // print event read
-            data1.FP1 = eventYVals;
-            json = JsonConvert.SerializeObject(data);
+            d.FP1 = eventYVals;
+            obj.data.Add(d);
+            json = JsonConvert.SerializeObject(obj);
             System.IO.File.WriteAllText(eventPath, json);
         }
-
-        /*
-             // only raw eeg and sensor info
-    public JSONObject exportJSON() {
-        JSONObject export = new JSONObject();
-        
-
-        try {
-            JSONArray raw_eeg_ints = new JSONArray();
-            for (Entry e : this.raw_yvals) {
-                raw_eeg_ints.put( (int) e.getVal() );
-            }
-
-            export.put(sensor, (JSONArray) raw_eeg_ints);
-            export.put("device", device);
-            export.put("sample_rate", sample_rate);
-            export.put("ver", eegwb_ver);
-
-            DateFormat df           = new SimpleDateFormat("MM-dd-yyyy HH:mm:ss");
-            export.put("record_datetime", df.format(this.record_datetime));
-
-        } catch ( JSONException je) {
-            je.printStackTrace();
-
-        }
-
-        return export;
-
-    }
-
-         */
     }
 }
